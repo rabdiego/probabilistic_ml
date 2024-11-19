@@ -21,7 +21,9 @@ class BayesianLinearRegression:
         return X@self.mean
 
 
-    def get_std(self, X: np.ndarray) -> np.ndarray:
+    def get_std(self, X: np.ndarray, split: bool = False) -> np.ndarray:
         n = X.shape[0]
-        return np.array([(X @ self.covariance @ X.T + self.noise**2 * np.identity(n)).diagonal()]).T
+        if not split:
+            return np.array([(X @ self.covariance @ X.T + self.noise**2 * np.identity(n)).diagonal()]).T
+        return np.array([(X @ self.covariance @ X.T).diagonal()]).T, np.array([(self.noise**2 * np.identity(n).diagonal())]).T
 
