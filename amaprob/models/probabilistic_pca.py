@@ -14,16 +14,17 @@ class PPCA:
         
         self.E_z = None
         self.E_zzT = None
+        self.M_inv = None
 
     
     def __step_e(self) -> None:
         M = self.W.T@self.W + self.sigma*np.identity(self.L)
-        M_inv = np.linalg.inv(M)
+        self.M_inv = np.linalg.inv(M)
         
-        self.E_z = (self.X - self.mu) @ (M_inv@self.W.T).T
+        self.E_z = (self.X - self.mu) @ (self.M_inv@self.W.T).T
 
         self.E_zzT = np.array([
-            self.sigma * M_inv + self.E_z[i].reshape(-1, 1) * self.E_z[i].reshape(-1, 1).T
+            self.sigma * self.M_inv + self.E_z[i].reshape(-1, 1) * self.E_z[i].reshape(-1, 1).T
         for i in range(self.N)])
     
 
@@ -44,8 +45,23 @@ class PPCA:
 
 
     def sample(self) -> np.ndarray:
-        random_latent_sample = np.random.rand(self.L, 1)
+        random_latent_sample = 10 * np.random.rand(self.L, 1)
         mean = (self.W@random_latent_sample + self.mu.reshape(-1, 1)).reshape(1, -1)[0]
         cov = 0.0 * np.identity(self.D)
 
         return multivariate_normal.rvs(mean, cov)
+    
+
+    def project(self, x) -> np.ndarray:
+        mean = (self.M_inv @ self.W.T @ (x - self.mu).reshape(-1, 1)).reshape(1, -1)[0]
+        cov = self.sigma * self.M_inv
+        return multivariate_normal.rvs(mean, cov)
+    
+
+    def reconstruct(self, z) -> np.ndarray:
+        z = z.reshape(-1, 1)
+        mean = (self.W@z + self.mu.reshape(-1, 1)).reshape(1, -1)[0]
+        cov = self.sigma * np.identity(self.D)
+
+        return multivariate_normal.rvs(mean, cov)
+
